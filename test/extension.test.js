@@ -1,15 +1,24 @@
-const assert = require('assert');
+const assert = require("assert");
+const vscode = require("vscode");
 
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-const vscode = require('vscode');
-// const myExtension = require('../extension');
+suite("Simple Extension Test Suite", function () {
+  suiteTeardown(() => {
+    vscode.window.showInformationMessage("All tests done!");
+  });
 
-suite('Extension Test Suite', () => {
-	vscode.window.showInformationMessage('Start all tests.');
+  test("Sample test - Check Extension Activation", async () => {
+    const extension = vscode.extensions.getExtension("Vierweb.consolidate");
+    assert.ok(extension, "Extension should be present");
 
-	test('Sample test', () => {
-		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
-	});
+    await extension.activate();
+    assert.strictEqual(extension.isActive, true, "Extension should be active");
+  });
+
+  test("Sample test - Check Command Registration", async () => {
+    const commandList = await vscode.commands.getCommands(true);
+    assert.ok(
+      commandList.includes("consolidate.consolidateFiles"),
+      'Command "consolidate.consolidateFiles" should be registered'
+    );
+  });
 });
