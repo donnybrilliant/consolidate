@@ -14,10 +14,22 @@
   "contributes": {
     "commands": [
       {
-        "command": "extension.consolidateFiles",
+        "command": "consolidate.consolidateFiles",
         "title": "Consolidate Files"
+      },
+      {
+        "command": "consolidate.consolidateSelectedFiles",
+        "title": "Consolidate Selected Files"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "consolidate.consolidateSelectedFiles",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "lint": "eslint .",
