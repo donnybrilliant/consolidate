@@ -1,35 +1,82 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
+const fs = require("fs");
+const path = require("path");
+const ignore = require("ignore");
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-
-/**
- * @param {vscode.ExtensionContext} context
- */
 function activate(context) {
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "consolidate" is now active!');
+  let disposable = vscode.commands.registerCommand(
+    "extension.consolidateFiles",
+    async () => {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders) {
+        vscode.window.showErrorMessage("No workspace folder is open.");
+        return;
+      }
 
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with  registerCommand
-  // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerCommand(
-    "consolidate.helloWorld",
-    function () {
-      // The code you place here will be executed every time your command is executed
+      const outputFile = await vscode.window.showInputBox({
+        placeHolder: "Enter output file name (e.g., consolidated_output.txt)",
+        value: "consolidated_output.txt",
+      });
 
-      // Display a message box to the user
-      vscode.window.showInformationMessage("Hello World from consolidate!");
+      if (!outputFile) {
+        vscode.window.showErrorMessage("Output file name is required.");
+        return;
+      }
+
+      const rootPath = workspaceFolders[0].uri.fsPath;
+      const outputPath = path.join(rootPath, outputFile);
+
+      // Initialize the ignore instance
+      const ig = ignore();
+      const gitignorePath = path.join(rootPath, ".gitignore");
+
+      if (fs.existsSync(gitignorePath)) {
+        const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
+        ig.add(gitignoreContent);
+      }
+
+      let content = "";
+      consolidateFiles(rootPath, ig, (fileContent) => {
+        content += fileContent;
+      });
+
+      fs.writeFileSync(outputPath, content, "utf8");
+      vscode.window.showInformationMessage(
+        `Files consolidated into ${outputPath}`
+      );
     }
   );
 
   context.subscriptions.push(disposable);
 }
 
-// This method is called when your extension is deactivated
+function consolidateFiles(directory, ig, callback) {
+  const files = fs.readdirSync(directory);
+  files.forEach((file) => {
+    const filePath = path.join(directory, file);
+    const relativePath = path.relative(
+      vscode.workspace.workspaceFolders[0].uri.fsPath,
+      filePath
+    );
+    const stats = fs.statSync(filePath);
+
+    // Exclude hidden files/folders and .gitignore exclusions
+    if (file.startsWith(".") || ig.ignores(relativePath)) {
+      return;
+    }
+
+    if (stats.isDirectory()) {
+      consolidateFiles(filePath, ig, callback);
+    } else {
+      const fileContent = `--- ${relativePath} ---\n${fs.readFileSync(
+        filePath,
+        "utf8"
+      )}\n\n`;
+      callback(fileContent);
+    }
+  });
+}
+
 function deactivate() {}
 
 module.exports = {
