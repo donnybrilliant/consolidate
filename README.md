@@ -1,11 +1,11 @@
-# Consolidate Files - VS Code Extension
+# Consolidate - VS Code Extension
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
 ![VS Code](https://img.shields.io/badge/VSCode-1.92.0+-blue.svg)
 
 ## Overview
 
-The **Consolidate Files** extension for Visual Studio Code allows you to quickly consolidate all or selected files from your workspace into a single text file. This is particularly useful for sharing project files in a single document or for reviewing multiple files at once.
+The **Consolidate** extension for Visual Studio Code allows you to quickly consolidate all or selected files from your workspace into a single text file. This is particularly useful for sharing project files in a single document, reviewing multiple files at once, or even preparing files for use in AI tools like GPT, where referencing multiple files in a web prompt can be challenging.
 
 ## Features
 
