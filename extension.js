@@ -30,7 +30,7 @@ function activate(context) {
       const ig = ignore();
 
       // Load custom ignore patterns
-      ig.add(["package-lock.json"]); // Add the specific file to ignore
+      ig.add(["package-lock.json", "yarn.lock", "*.log"]);
 
       // Check for a .gitignore file and add its contents to the ignore instance
       const gitignorePath = path.join(rootPath, ".gitignore");
