@@ -16,8 +16,20 @@
       {
         "command": "extension.consolidateFiles",
         "title": "Consolidate Files"
+      },
+      {
+        "command": "extension.consolidateSelectedFiles",
+        "title": "Consolidate Selected Files"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "extension.consolidateSelectedFiles",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "lint": "eslint .",

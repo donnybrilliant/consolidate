@@ -1,10 +1,10 @@
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const ignore = require("ignore");
 
 function activate(context) {
-  let disposable = vscode.commands.registerCommand(
+  // Command for consolidating all files, respecting .gitignore
+  let consolidateAllCommand = vscode.commands.registerCommand(
     "extension.consolidateFiles",
     async () => {
       const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -26,18 +26,16 @@ function activate(context) {
       const rootPath = workspaceFolders[0].uri.fsPath;
       const outputPath = path.join(rootPath, outputFile);
 
-      // Initialize the ignore instance
-      const ig = ignore();
-
-      // Load custom ignore patterns
-      ig.add(["package-lock.json", "yarn.lock", "*.log"]);
-
-      // Check for a .gitignore file and add its contents to the ignore instance
+      const ig = require("ignore")();
       const gitignorePath = path.join(rootPath, ".gitignore");
+
       if (fs.existsSync(gitignorePath)) {
         const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
         ig.add(gitignoreContent);
       }
+
+      // Load custom ignore patterns
+      ig.add(["package-lock.json", "yarn.lock", "*.log"]);
 
       let content = "";
       consolidateFiles(rootPath, ig, (fileContent) => {
@@ -51,7 +49,52 @@ function activate(context) {
     }
   );
 
-  context.subscriptions.push(disposable);
+  // Command for consolidating selected files, ignoring .gitignore and custom ignores
+  let consolidateSelectedCommand = vscode.commands.registerCommand(
+    "extension.consolidateSelectedFiles",
+    async (uri, uris) => {
+      // Handle both single and multiple selections
+      const selectedUris = uris && uris.length > 0 ? uris : [uri];
+      if (!selectedUris || selectedUris.length === 0) {
+        vscode.window.showErrorMessage("No files selected.");
+        return;
+      }
+
+      const outputFile = await vscode.window.showInputBox({
+        placeHolder: "Enter output file name (e.g., consolidated_output.txt)",
+        value: "consolidated_output.txt",
+      });
+
+      if (!outputFile) {
+        vscode.window.showErrorMessage("Output file name is required.");
+        return;
+      }
+
+      const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const outputPath = path.join(rootPath, outputFile);
+
+      let content = "";
+
+      selectedUris.forEach((fileUri) => {
+        const relativePath = path.relative(rootPath, fileUri.fsPath);
+        if (fs.statSync(fileUri.fsPath).isFile()) {
+          const fileContent = `--- ${relativePath} ---\n${fs.readFileSync(
+            fileUri.fsPath,
+            "utf8"
+          )}\n\n`;
+          content += fileContent; // Append content of each selected file
+        }
+      });
+
+      fs.writeFileSync(outputPath, content, "utf8");
+      vscode.window.showInformationMessage(
+        `Files consolidated into ${outputPath}`
+      );
+    }
+  );
+
+  context.subscriptions.push(consolidateAllCommand);
+  context.subscriptions.push(consolidateSelectedCommand);
 }
 
 function consolidateFiles(directory, ig, callback) {
