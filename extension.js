@@ -5,7 +5,7 @@ const path = require("path");
 function activate(context) {
   // Command for consolidating all files, respecting .gitignore
   let consolidateAllCommand = vscode.commands.registerCommand(
-    "extension.consolidateFiles",
+    "consolidate.consolidateFiles",
     async () => {
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (!workspaceFolders) {
@@ -56,7 +56,7 @@ function activate(context) {
 
   // Command for consolidating selected files, including folders
   let consolidateSelectedCommand = vscode.commands.registerCommand(
-    "extension.consolidateSelectedFiles",
+    "consolidate.consolidateSelectedFiles",
     async (uri, uris) => {
       const selectedUris = uris && uris.length > 0 ? uris : [uri];
       if (!selectedUris || selectedUris.length === 0) {
