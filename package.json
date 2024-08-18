@@ -1,8 +1,13 @@
 {
   "name": "consolidate",
   "displayName": "consolidate",
+  "publisher": "Vierweb",
   "description": "A VS Code extension to consolidate all files into their paths and contents.",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/donnybrilliant/consolidate.git"
+  },
   "engines": {
     "vscode": "^1.92.0"
   },
