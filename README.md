@@ -1,65 +1,53 @@
-# consolidate README
+# Consolidate Files - VS Code Extension
 
-This is the README for your extension "consolidate". After writing up a brief description, we recommend including the following sections.
+![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
+![VS Code](https://img.shields.io/badge/VSCode-1.92.0+-blue.svg)
+
+## Overview
+
+The **Consolidate Files** extension for Visual Studio Code allows you to quickly consolidate all or selected files from your workspace into a single text file. This is particularly useful for sharing project files in a single document or for reviewing multiple files at once.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Consolidate All Files**: Combines the contents of all files in your workspace into a single output file, respecting `.gitignore` and hidden files.
+- **Consolidate Selected Files**: Right-click on selected files or folders in the explorer to combine their contents into a single output file, with the option to include hidden or ignored files.
+- **Custom Output File Name**: Easily specify the name of the output file.
 
-For example if there is an image subfolder under your extension project workspace:
+## Usage
 
-\!\[feature X\]\(images/feature-x.png\)
+### 1. Consolidate All Files
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+1. Open the command palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux).
+2. Type `Consolidate Files` and press `Enter`.
+3. Enter the desired output file name (e.g., `consolidated_output.txt`).
+4. The contents of all non-hidden, non-ignored files will be consolidated into the specified file.
+
+### 2. Consolidate Selected Files
+
+1. Select the files or folders in the explorer that you want to consolidate.
+2. Right-click and choose `Consolidate Selected Files`.
+3. Enter the desired output file name.
+4. The contents of the selected files will be consolidated into the specified file.
+
+## Installation
+
+1. Open VS Code.
+2. Go to the Extensions view (`Cmd+Shift+X` on macOS, `Ctrl+Shift+X` on Windows/Linux).
+3. Search for `Consolidate Files`.
+4. Click `Install`.
+
+## Configuration
+
+No additional configuration is required.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Visual Studio Code `1.92.0` or higher.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+See the [CHANGELOG](CHANGELOG.md) for details.
 
-### 1.0.0
+## License
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+MIT License. See [LICENSE](LICENSE) for more information.

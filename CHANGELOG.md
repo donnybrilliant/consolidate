@@ -1,9 +1,13 @@
-# Change Log
+# Change log
 
-All notable changes to the "consolidate" extension will be documented in this file.
+All notable changes to this project will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.1.0] - 2024-08-18
 
-## [Unreleased]
+### Added
 
-- Initial release
+- Initial release of the **Consolidate Files** extension.
+- Command to consolidate all files in the workspace.
+- Command to consolidate selected files via the context menu.
+- Support for custom output file names.
+- Respects `.gitignore` and hidden files during consolidation.
