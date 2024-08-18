@@ -28,8 +28,12 @@ function activate(context) {
 
       // Initialize the ignore instance
       const ig = ignore();
-      const gitignorePath = path.join(rootPath, ".gitignore");
 
+      // Load custom ignore patterns
+      ig.add(["package-lock.json"]); // Add the specific file to ignore
+
+      // Check for a .gitignore file and add its contents to the ignore instance
+      const gitignorePath = path.join(rootPath, ".gitignore");
       if (fs.existsSync(gitignorePath)) {
         const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
         ig.add(gitignoreContent);
@@ -60,7 +64,7 @@ function consolidateFiles(directory, ig, callback) {
     );
     const stats = fs.statSync(filePath);
 
-    // Exclude hidden files/folders and .gitignore exclusions
+    // Exclude hidden files/folders, custom ignores, and .gitignore exclusions
     if (file.startsWith(".") || ig.ignores(relativePath)) {
       return;
     }
