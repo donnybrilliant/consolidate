@@ -38,9 +38,14 @@ function activate(context) {
       ig.add(["package-lock.json", "yarn.lock", "*.log"]);
 
       let content = "";
-      consolidateFiles(rootPath, ig, (fileContent) => {
-        content += fileContent;
-      });
+      consolidateFiles(
+        rootPath,
+        ig,
+        (fileContent) => {
+          content += fileContent;
+        },
+        true
+      ); // Exclude hidden files and respect .gitignore
 
       fs.writeFileSync(outputPath, content, "utf8");
       vscode.window.showInformationMessage(
@@ -49,14 +54,13 @@ function activate(context) {
     }
   );
 
-  // Command for consolidating selected files, ignoring .gitignore and custom ignores
+  // Command for consolidating selected files, including folders
   let consolidateSelectedCommand = vscode.commands.registerCommand(
     "extension.consolidateSelectedFiles",
     async (uri, uris) => {
-      // Handle both single and multiple selections
       const selectedUris = uris && uris.length > 0 ? uris : [uri];
       if (!selectedUris || selectedUris.length === 0) {
-        vscode.window.showErrorMessage("No files selected.");
+        vscode.window.showErrorMessage("No files or folders selected.");
         return;
       }
 
@@ -73,16 +77,38 @@ function activate(context) {
       const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
       const outputPath = path.join(rootPath, outputFile);
 
+      const ig = require("ignore")();
+      const gitignorePath = path.join(rootPath, ".gitignore");
+
+      if (fs.existsSync(gitignorePath)) {
+        const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
+        ig.add(gitignoreContent);
+      }
+
+      ig.add(["package-lock.json", "yarn.lock", "*.log"]);
+
       let content = "";
 
       selectedUris.forEach((fileUri) => {
-        const relativePath = path.relative(rootPath, fileUri.fsPath);
-        if (fs.statSync(fileUri.fsPath).isFile()) {
+        const stats = fs.statSync(fileUri.fsPath);
+        if (stats.isDirectory()) {
+          // For selected folders, bypass .gitignore but exclude hidden files
+          consolidateFiles(
+            fileUri.fsPath,
+            null,
+            (fileContent) => {
+              content += fileContent;
+            },
+            true
+          );
+        } else if (stats.isFile()) {
+          // Always include explicitly selected files, even if hidden or ignored
+          const relativePath = path.relative(rootPath, fileUri.fsPath);
           const fileContent = `--- ${relativePath} ---\n${fs.readFileSync(
             fileUri.fsPath,
             "utf8"
           )}\n\n`;
-          content += fileContent; // Append content of each selected file
+          content += fileContent;
         }
       });
 
@@ -97,7 +123,16 @@ function activate(context) {
   context.subscriptions.push(consolidateSelectedCommand);
 }
 
-function consolidateFiles(directory, ig, callback) {
+// Function to determine if a file should be ignored based on hidden status or .gitignore
+function shouldIgnore(filePath, relativePath, ig, excludeHidden) {
+  return (
+    (excludeHidden && path.basename(filePath).startsWith(".")) ||
+    (ig && ig.ignores(relativePath))
+  );
+}
+
+// Recursive function to consolidate files within a directory
+function consolidateFiles(directory, ig, callback, excludeHidden) {
   const files = fs.readdirSync(directory);
   files.forEach((file) => {
     const filePath = path.join(directory, file);
@@ -107,14 +142,14 @@ function consolidateFiles(directory, ig, callback) {
     );
     const stats = fs.statSync(filePath);
 
-    // Exclude hidden files/folders, custom ignores, and .gitignore exclusions
-    if (file.startsWith(".") || ig.ignores(relativePath)) {
+    // Exclude hidden files and apply .gitignore rules if ig is provided
+    if (shouldIgnore(filePath, relativePath, ig, excludeHidden)) {
       return;
     }
 
     if (stats.isDirectory()) {
-      consolidateFiles(filePath, ig, callback);
-    } else {
+      consolidateFiles(filePath, ig, callback, excludeHidden); // Recursively consolidate subdirectories
+    } else if (stats.isFile()) {
       const fileContent = `--- ${relativePath} ---\n${fs.readFileSync(
         filePath,
         "utf8"
