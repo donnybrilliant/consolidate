@@ -1,6 +1,6 @@
 # Consolidate - VS Code Extension
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)
 ![VS Code](https://img.shields.io/badge/VSCode-1.92.0+-blue.svg)
 
 ## Overview
