@@ -32,7 +32,13 @@
       "explorer/context": [
         {
           "command": "consolidate.consolidateSelectedFiles",
-          "group": "navigation"
+          "group": "3_compare@100"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "consolidate.consolidateSelectedFiles",
+          "when": "false"
         }
       ]
     }
