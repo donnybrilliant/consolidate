@@ -54,11 +54,12 @@ function activate(context) {
     }
   );
 
-  // Command for consolidating selected files, including folders
-  let consolidateSelectedCommand = vscode.commands.registerCommand(
+  // Command for consolidating selected files from explorer
+  let consolidateSelectedFilesCommand = vscode.commands.registerCommand(
     "consolidate.consolidateSelectedFiles",
     async (uri, uris) => {
       const selectedUris = uris && uris.length > 0 ? uris : [uri];
+
       if (!selectedUris || selectedUris.length === 0) {
         vscode.window.showErrorMessage("No files or folders selected.");
         return;
@@ -76,16 +77,6 @@ function activate(context) {
 
       const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
       const outputPath = path.join(rootPath, outputFile);
-
-      const ig = require("ignore")();
-      const gitignorePath = path.join(rootPath, ".gitignore");
-
-      if (fs.existsSync(gitignorePath)) {
-        const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
-        ig.add(gitignoreContent);
-      }
-
-      ig.add(["package-lock.json", "yarn.lock", "*.log"]);
 
       let content = "";
 
@@ -119,8 +110,62 @@ function activate(context) {
     }
   );
 
+  // Command for consolidating all open editors
+  let consolidateSelectedEditorFilesCommand = vscode.commands.registerCommand(
+    "consolidate.consolidateSelectedEditorFiles",
+    async () => {
+      const editorGroups = vscode.window.tabGroups.all;
+      let documents = [];
+
+      editorGroups.forEach((group) => {
+        group.tabs.forEach((tab) => {
+          if (tab.input && tab.input instanceof vscode.TabInputText) {
+            const document = vscode.workspace.textDocuments.find(
+              (doc) => doc.uri.toString() === tab.input.uri.toString()
+            );
+            if (document) {
+              documents.push(document);
+            }
+          }
+        });
+      });
+
+      if (documents.length === 0) {
+        vscode.window.showErrorMessage("No open tabs found.");
+        return;
+      }
+
+      const outputFile = await vscode.window.showInputBox({
+        placeHolder: "Enter output file name (e.g., consolidated_output.txt)",
+        value: "consolidated_output.txt",
+      });
+
+      if (!outputFile) {
+        vscode.window.showErrorMessage("Output file name is required.");
+        return;
+      }
+
+      const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const outputPath = path.join(rootPath, outputFile);
+
+      let content = "";
+
+      documents.forEach((document) => {
+        const relativePath = path.relative(rootPath, document.uri.fsPath);
+        const fileContent = `--- ${relativePath} ---\n${document.getText()}\n\n`;
+        content += fileContent;
+      });
+
+      fs.writeFileSync(outputPath, content, "utf8");
+      vscode.window.showInformationMessage(
+        `Files consolidated into ${outputPath}`
+      );
+    }
+  );
+
   context.subscriptions.push(consolidateAllCommand);
-  context.subscriptions.push(consolidateSelectedCommand);
+  context.subscriptions.push(consolidateSelectedFilesCommand);
+  context.subscriptions.push(consolidateSelectedEditorFilesCommand);
 }
 
 // Function to determine if a file should be ignored based on hidden status or .gitignore

@@ -1,6 +1,6 @@
 # Consolidate - VS Code Extension
 
-![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)
+![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)
 ![VS Code](https://img.shields.io/badge/VSCode-1.92.0+-blue.svg)
 
 ## Overview
@@ -10,7 +10,7 @@ The **Consolidate** extension for Visual Studio Code allows you to quickly conso
 ## Features
 
 - **Consolidate All Files**: Combines the contents of all files in your workspace into a single output file, respecting `.gitignore` and hidden files.
-- **Consolidate Selected Files**: Right-click on selected files or folders in the explorer to combine their contents into a single output file, with the option to include hidden or ignored files.
+- **Consolidate Selected Files**: Right-click on selected files or folders in the explorer or open tabs to combine their contents into a single output file.
 - **Custom Output File Name**: Easily specify the name of the output file.
 
 ## Usage
@@ -22,9 +22,11 @@ The **Consolidate** extension for Visual Studio Code allows you to quickly conso
 3. Enter the desired output file name (e.g., `consolidated_output.txt`).
 4. The contents of all non-hidden, non-ignored files will be consolidated into the specified file.
 
+Alternatively, right-click in the Explorer panel, with no files selected and choose Consolidate All Files to consolidate all files in your workspace into a single text file.
+
 ### 2. Consolidate Selected Files
 
-1. Select the files or folders in the explorer that you want to consolidate.
+1. Select the files or folders in the explorer or open tabs that you want to consolidate.
 2. Right-click and choose `Consolidate Selected Files`.
 3. Enter the desired output file name.
 4. The contents of the selected files will be consolidated into the specified file.
