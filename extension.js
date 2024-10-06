@@ -13,19 +13,7 @@ function activate(context) {
         return;
       }
 
-      const outputFile = await vscode.window.showInputBox({
-        placeHolder: "Enter output file name (e.g., consolidated_output.txt)",
-        value: "consolidated_output.txt",
-      });
-
-      if (!outputFile) {
-        vscode.window.showErrorMessage("Output file name is required.");
-        return;
-      }
-
       const rootPath = workspaceFolders[0].uri.fsPath;
-      const outputPath = path.join(rootPath, outputFile);
-
       const ig = require("ignore")();
       const gitignorePath = path.join(rootPath, ".gitignore");
 
@@ -47,36 +35,30 @@ function activate(context) {
         true
       ); // Exclude hidden files and respect .gitignore
 
-      fs.writeFileSync(outputPath, content, "utf8");
-      vscode.window.showInformationMessage(
-        `Files consolidated into ${outputPath}`
-      );
+      handleConsolidationResult(content, "consolidate.consolidateFiles");
     }
   );
 
-  // Command for consolidating selected files from explorer
-  let consolidateSelectedFilesCommand = vscode.commands.registerCommand(
+  // Command for consolidating selected files, including folders
+  let consolidateSelectedCommand = vscode.commands.registerCommand(
     "consolidate.consolidateSelectedFiles",
     async (uri, uris) => {
       const selectedUris = uris && uris.length > 0 ? uris : [uri];
-
       if (!selectedUris || selectedUris.length === 0) {
         vscode.window.showErrorMessage("No files or folders selected.");
         return;
       }
 
-      const outputFile = await vscode.window.showInputBox({
-        placeHolder: "Enter output file name (e.g., consolidated_output.txt)",
-        value: "consolidated_output.txt",
-      });
+      const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      const ig = require("ignore")();
+      const gitignorePath = path.join(rootPath, ".gitignore");
 
-      if (!outputFile) {
-        vscode.window.showErrorMessage("Output file name is required.");
-        return;
+      if (fs.existsSync(gitignorePath)) {
+        const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
+        ig.add(gitignoreContent);
       }
 
-      const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-      const outputPath = path.join(rootPath, outputFile);
+      ig.add(["package-lock.json", "yarn.lock", "*.log"]);
 
       let content = "";
 
@@ -103,14 +85,14 @@ function activate(context) {
         }
       });
 
-      fs.writeFileSync(outputPath, content, "utf8");
-      vscode.window.showInformationMessage(
-        `Files consolidated into ${outputPath}`
+      handleConsolidationResult(
+        content,
+        "consolidate.consolidateSelectedFiles"
       );
     }
   );
 
-  // Command for consolidating all open editors
+  // Command for consolidating selected editor tabs
   let consolidateSelectedEditorFilesCommand = vscode.commands.registerCommand(
     "consolidate.consolidateSelectedEditorFiles",
     async () => {
@@ -135,6 +117,29 @@ function activate(context) {
         return;
       }
 
+      const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      let content = "";
+
+      documents.forEach((document) => {
+        const relativePath = path.relative(rootPath, document.uri.fsPath);
+        const fileContent = `--- ${relativePath} ---\n${document.getText()}\n\n`;
+        content += fileContent;
+      });
+
+      handleConsolidationResult(
+        content,
+        "consolidate.consolidateSelectedEditorFiles"
+      );
+    }
+  );
+
+  // Handle the consolidated content based on user settings
+  async function handleConsolidationResult(content) {
+    const config = vscode.workspace.getConfiguration("consolidate");
+    let outputPath;
+    let createdFileUri;
+
+    if (config.get("createFile")) {
       const outputFile = await vscode.window.showInputBox({
         placeHolder: "Enter output file name (e.g., consolidated_output.txt)",
         value: "consolidated_output.txt",
@@ -146,25 +151,43 @@ function activate(context) {
       }
 
       const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-      const outputPath = path.join(rootPath, outputFile);
-
-      let content = "";
-
-      documents.forEach((document) => {
-        const relativePath = path.relative(rootPath, document.uri.fsPath);
-        const fileContent = `--- ${relativePath} ---\n${document.getText()}\n\n`;
-        content += fileContent;
-      });
-
+      outputPath = path.join(rootPath, outputFile);
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
       fs.writeFileSync(outputPath, content, "utf8");
       vscode.window.showInformationMessage(
-        `Files consolidated into ${outputPath}`
+        `Files consolidated into ${path.relative(
+          vscode.workspace.workspaceFolders[0].uri.fsPath,
+          outputPath
+        )}`
+      );
+
+      createdFileUri = vscode.Uri.file(outputPath);
+    }
+
+    if (
+      config.get("createFile") &&
+      config.get("openInNewTab") &&
+      createdFileUri
+    ) {
+      vscode.workspace.openTextDocument(createdFileUri).then((doc) => {
+        vscode.window.showTextDocument(doc);
+      });
+    } else if (config.get("openInNewTab")) {
+      vscode.workspace.openTextDocument({ content }).then((doc) => {
+        vscode.window.showTextDocument(doc);
+      });
+    }
+
+    if (config.get("copyToClipboard")) {
+      vscode.env.clipboard.writeText(content);
+      vscode.window.showInformationMessage(
+        "Consolidated content copied to clipboard"
       );
     }
-  );
+  }
 
   context.subscriptions.push(consolidateAllCommand);
-  context.subscriptions.push(consolidateSelectedFilesCommand);
+  context.subscriptions.push(consolidateSelectedCommand);
   context.subscriptions.push(consolidateSelectedEditorFilesCommand);
 }
 

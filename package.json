@@ -61,6 +61,27 @@
           "when": "false"
         }
       ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "Consolidate Extension Settings",
+      "properties": {
+        "consolidate.createFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to create a new consolidated output file."
+        },
+        "consolidate.openInNewTab": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to open the consolidated output in a new tab."
+        },
+        "consolidate.copyToClipboard": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to copy the consolidated output to the clipboard."
+        }
+      }
     }
   },
   "scripts": {
