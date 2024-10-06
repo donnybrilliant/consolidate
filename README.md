@@ -9,15 +9,15 @@ The **Consolidate** extension for Visual Studio Code allows you to quickly conso
 
 ## Features
 
-- **Consolidate All Files**: Combines the contents of all files in your workspace into a single output file, respecting `.gitignore` and hidden files.
-- **Consolidate Selected Files**: Right-click on selected files or folders in the explorer or open tabs to combine their contents into a single output file.
-- **First-Run Configuration**: Decide whether to save the consolidated content to a file, open it in a new tab, or copy it to the clipboard.
+- **Consolidate All Files**: Merge all workspace files into one, respecting .gitignore and hidden files.
+- **Consolidate Selected Files**: Merge contents of selected files or folders.
+- **Customizable Output**: Choose to create a file, open in a new tab, or copy to the clipboard.
 
 ## Usage
 
 ### 1. First-Run Configuration
 
-When you run the Consolidate extension for the first time, you will be prompted to configure how you want the extension to behave. You can select from the following options:
+When you run the Consolidate extension for the first time, set your preferred method:
 
 - **Create File:** Consolidate files into a new output file.
 - **Open in New Tab:** Open the consolidated content in a new editor tab.
@@ -28,24 +28,14 @@ Once you’ve configured these settings, they will persist for future use. On su
 ### 2. Consolidate All Files
 
 1. Open the command palette (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux).
-2. Type `Consolidate Files` and press `Enter`.
-3. Depending on your configuration:
-   - **If "Create File" is selected**, you will be prompted to enter a file name for the output (e.g., `consolidated_output.txt`).
-   - **If "Open in New Tab" is selected**, the content will open in a new editor tab without saving to a file.
-   - **If "Copy to Clipboard" is selected**, the consolidated content will be copied directly to your clipboard.
-4. The contents of all non-hidden, non-ignored files will be consolidated.
+2. Run `Consolidate Files`.
 
-Alternatively, right-click in the Explorer panel, with no files selected and choose Consolidate All Files to consolidate all files in your workspace into a single text file.
+Alternatively, right-click in the Explorer panel, with no files selected and choose `Consolidate All Files`.
 
 ### 3. Consolidate Selected Files
 
 1. Select the files or folders in the explorer or open tabs that you want to consolidate.
 2. Right-click and choose `Consolidate Selected Files`.
-3. Depending on your configuration:
-   - **If "Create File" is selected**, you will be prompted to enter a file name for the output (e.g., `consolidated_selected_output.txt`).
-   - **If "Open in New Tab" is selected**, the selected files' content will open in a new editor tab.
-   - **If "Copy to Clipboard" is selected**, the consolidated content will be copied directly to your clipboard.
-4. The contents of the selected files will be consolidated into the specified file.
 
 ## Installation
 
