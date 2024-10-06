@@ -2,40 +2,45 @@ const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
 
+let pendingCommand = null; // Store the command to run after settings are configured
+
 function activate(context) {
   // Command for consolidating all files, respecting .gitignore
   let consolidateAllCommand = vscode.commands.registerCommand(
     "consolidate.consolidateFiles",
     async () => {
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (!workspaceFolders) {
-        vscode.window.showErrorMessage("No workspace folder is open.");
-        return;
-      }
+      await ensureSettingsConfigured(context, async () => {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) {
+          vscode.window.showErrorMessage("No workspace folder is open.");
+          return;
+        }
 
-      const rootPath = workspaceFolders[0].uri.fsPath;
-      const ig = require("ignore")();
-      const gitignorePath = path.join(rootPath, ".gitignore");
+        const rootPath = workspaceFolders[0].uri.fsPath;
+        const ig = require("ignore")();
+        const gitignorePath = path.join(rootPath, ".gitignore");
 
-      if (fs.existsSync(gitignorePath)) {
-        const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
-        ig.add(gitignoreContent);
-      }
+        if (fs.existsSync(gitignorePath)) {
+          const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
+          ig.add(gitignoreContent);
+        }
 
-      // Load custom ignore patterns
-      ig.add(["package-lock.json", "yarn.lock", "*.log"]);
+        // Load custom ignore patterns
+        ig.add(["package-lock.json", "yarn.lock", "*.log"]);
 
-      let content = "";
-      consolidateFiles(
-        rootPath,
-        ig,
-        (fileContent) => {
-          content += fileContent;
-        },
-        true
-      ); // Exclude hidden files and respect .gitignore
+        let content = "";
+        consolidateFiles(
+          rootPath,
+          ig,
+          (fileContent) => {
+            content += fileContent;
+          },
+          true
+        ); // Exclude hidden files and respect .gitignore
 
-      handleConsolidationResult(content, "consolidate.consolidateFiles");
+        // Handle the consolidated result
+        handleConsolidationResult(content);
+      });
     }
   );
 
@@ -43,52 +48,50 @@ function activate(context) {
   let consolidateSelectedCommand = vscode.commands.registerCommand(
     "consolidate.consolidateSelectedFiles",
     async (uri, uris) => {
-      const selectedUris = uris && uris.length > 0 ? uris : [uri];
-      if (!selectedUris || selectedUris.length === 0) {
-        vscode.window.showErrorMessage("No files or folders selected.");
-        return;
-      }
-
-      const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-      const ig = require("ignore")();
-      const gitignorePath = path.join(rootPath, ".gitignore");
-
-      if (fs.existsSync(gitignorePath)) {
-        const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
-        ig.add(gitignoreContent);
-      }
-
-      ig.add(["package-lock.json", "yarn.lock", "*.log"]);
-
-      let content = "";
-
-      selectedUris.forEach((fileUri) => {
-        const stats = fs.statSync(fileUri.fsPath);
-        if (stats.isDirectory()) {
-          // For selected folders, bypass .gitignore but exclude hidden files
-          consolidateFiles(
-            fileUri.fsPath,
-            null,
-            (fileContent) => {
-              content += fileContent;
-            },
-            true
-          );
-        } else if (stats.isFile()) {
-          // Always include explicitly selected files, even if hidden or ignored
-          const relativePath = path.relative(rootPath, fileUri.fsPath);
-          const fileContent = `--- ${relativePath} ---\n${fs.readFileSync(
-            fileUri.fsPath,
-            "utf8"
-          )}\n\n`;
-          content += fileContent;
+      await ensureSettingsConfigured(context, async () => {
+        const selectedUris = uris && uris.length > 0 ? uris : [uri];
+        if (!selectedUris || selectedUris.length === 0) {
+          vscode.window.showErrorMessage("No files or folders selected.");
+          return;
         }
-      });
 
-      handleConsolidationResult(
-        content,
-        "consolidate.consolidateSelectedFiles"
-      );
+        const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        const ig = require("ignore")();
+        const gitignorePath = path.join(rootPath, ".gitignore");
+
+        if (fs.existsSync(gitignorePath)) {
+          const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
+          ig.add(gitignoreContent);
+        }
+
+        ig.add(["package-lock.json", "yarn.lock", "*.log"]);
+
+        let content = "";
+
+        selectedUris.forEach((fileUri) => {
+          const stats = fs.statSync(fileUri.fsPath);
+          if (stats.isDirectory()) {
+            consolidateFiles(
+              fileUri.fsPath,
+              null,
+              (fileContent) => {
+                content += fileContent;
+              },
+              true
+            );
+          } else if (stats.isFile()) {
+            const relativePath = path.relative(rootPath, fileUri.fsPath);
+            const fileContent = `--- ${relativePath} ---\n${fs.readFileSync(
+              fileUri.fsPath,
+              "utf8"
+            )}\n\n`;
+            content += fileContent;
+          }
+        });
+
+        // Handle the consolidated result
+        handleConsolidationResult(content);
+      });
     }
   );
 
@@ -96,40 +99,40 @@ function activate(context) {
   let consolidateSelectedEditorFilesCommand = vscode.commands.registerCommand(
     "consolidate.consolidateSelectedEditorFiles",
     async () => {
-      const editorGroups = vscode.window.tabGroups.all;
-      let documents = [];
+      await ensureSettingsConfigured(context, async () => {
+        const editorGroups = vscode.window.tabGroups.all;
+        let documents = [];
 
-      editorGroups.forEach((group) => {
-        group.tabs.forEach((tab) => {
-          if (tab.input && tab.input instanceof vscode.TabInputText) {
-            const document = vscode.workspace.textDocuments.find(
-              (doc) => doc.uri.toString() === tab.input.uri.toString()
-            );
-            if (document) {
-              documents.push(document);
+        editorGroups.forEach((group) => {
+          group.tabs.forEach((tab) => {
+            if (tab.input && tab.input instanceof vscode.TabInputText) {
+              const document = vscode.workspace.textDocuments.find(
+                (doc) => doc.uri.toString() === tab.input.uri.toString()
+              );
+              if (document) {
+                documents.push(document);
+              }
             }
-          }
+          });
         });
+
+        if (documents.length === 0) {
+          vscode.window.showErrorMessage("No open tabs found.");
+          return;
+        }
+
+        const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
+        let content = "";
+
+        documents.forEach((document) => {
+          const relativePath = path.relative(rootPath, document.uri.fsPath);
+          const fileContent = `--- ${relativePath} ---\n${document.getText()}\n\n`;
+          content += fileContent;
+        });
+
+        // Handle the consolidated result
+        handleConsolidationResult(content);
       });
-
-      if (documents.length === 0) {
-        vscode.window.showErrorMessage("No open tabs found.");
-        return;
-      }
-
-      const rootPath = vscode.workspace.workspaceFolders[0].uri.fsPath;
-      let content = "";
-
-      documents.forEach((document) => {
-        const relativePath = path.relative(rootPath, document.uri.fsPath);
-        const fileContent = `--- ${relativePath} ---\n${document.getText()}\n\n`;
-        content += fileContent;
-      });
-
-      handleConsolidationResult(
-        content,
-        "consolidate.consolidateSelectedEditorFiles"
-      );
     }
   );
 
@@ -186,9 +189,83 @@ function activate(context) {
     }
   }
 
+  // Command to configure settings
+  let configureSettingsCommand = vscode.commands.registerCommand(
+    "consolidate.configureSettings",
+    async () => {
+      const config = vscode.workspace.getConfiguration("consolidate");
+      const selections = await vscode.window.showQuickPick(
+        [
+          {
+            label: "Create File",
+            picked: config.get("createFile"),
+            description: "Consolidate files into a new output file",
+          },
+          {
+            label: "Open in New Tab",
+            picked: config.get("openInNewTab"),
+            description: "Open the consolidated content in a new tab",
+          },
+          {
+            label: "Copy to Clipboard",
+            picked: config.get("copyToClipboard"),
+            description: "Copy the consolidated content to the clipboard",
+          },
+        ],
+        {
+          canPickMany: true,
+          placeHolder:
+            "Select options for how you want to use the Consolidate extension",
+        }
+      );
+
+      if (selections) {
+        const selectedLabels = selections.map((selection) => selection.label);
+        await config.update(
+          "createFile",
+          selectedLabels.includes("Create File"),
+          vscode.ConfigurationTarget.Global
+        );
+        await config.update(
+          "openInNewTab",
+          selectedLabels.includes("Open in New Tab"),
+          vscode.ConfigurationTarget.Global
+        );
+        await config.update(
+          "copyToClipboard",
+          selectedLabels.includes("Copy to Clipboard"),
+          vscode.ConfigurationTarget.Global
+        );
+      }
+    }
+  );
+
   context.subscriptions.push(consolidateAllCommand);
   context.subscriptions.push(consolidateSelectedCommand);
   context.subscriptions.push(consolidateSelectedEditorFilesCommand);
+  context.subscriptions.push(configureSettingsCommand);
+}
+
+// Function to ensure settings are configured
+async function ensureSettingsConfigured(context, commandToRun) {
+  const firstRunKey = "extension.firstRun";
+  const isFirstRun = context.globalState.get(firstRunKey, true);
+
+  if (isFirstRun) {
+    // If first run, show the settings configuration
+    pendingCommand = commandToRun; // Save the command to run after settings are configured
+    vscode.commands.executeCommand("consolidate.configureSettings").then(() => {
+      context.globalState.update(firstRunKey, false);
+      // Run the pending command once settings are configured
+      if (pendingCommand) {
+        pendingCommand();
+        pendingCommand = null;
+      }
+    });
+  } else {
+    // If not the first run, execute the command directly
+    await commandToRun();
+  }
 }
 
 // Function to determine if a file should be ignored based on hidden status or .gitignore
